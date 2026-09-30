@@ -1,8 +1,28 @@
+{{ config(
+    materialized='incremental',
+    unique_key='event_id',
+    incremental_strategy='delete+insert',
+    on_schema_change='fail'
+) }}
+
 WITH source as (
     SELECT
         * 
     FROM 
         {{ source('raw', 'events') }}
+    WHERE 1=1 
+
+    {% if var('through_date', none) %}
+    and _export_date <= date '{{ var("through_date") }}'
+    {% endif %}
+
+    {%if is_incremental()%}
+    and _export_date >= (
+        select max(_export_date) - {{var('through_date', 1)}}
+        from {{this}}
+    )
+    {% endif %}
+
 ),
 
 column_transforms as (
@@ -33,11 +53,11 @@ column_transforms as (
 
 deduplicated_events as (
     SELECT *, 
-    row_number() over (partition by event_id order by received_at asc) as rnk
+    row_number() over (partition by event_id order by received_at, _source_file asc) as rnk
     FROM 
     column_transforms
     qualify 
-    row_number() over (partition by event_id order by received_at asc) = 1
+    row_number() over (partition by event_id order by received_at, _source_file asc) = 1
 ),
 final as (
     SELECT 
