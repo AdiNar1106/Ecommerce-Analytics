@@ -1,0 +1,10 @@
+ecommerce_analytics:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: ../data/warehouse.duckdb   # relative to where you run dbt
+      threads: 4
+      settings:
+        memory_limit: '4GB'
+        preserve_insertion_order: false

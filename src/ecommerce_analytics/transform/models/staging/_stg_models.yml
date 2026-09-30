@@ -1,0 +1,28 @@
+models:
+  # Model name must match the filename of a model -- including case sensitivity
+  - name: stg_events
+    description: "Silver/Staging layer of cleaned and deduped events from raw"
+    columns:
+      - name: event_id # required
+        description: "ID of the event"
+        constraints:
+          - type: not_null
+          - type: unique
+        data_tests:
+          - not_null 
+          - unique
+      - name: event_type
+        data_tests:
+          - accepted_values: 
+              arguments:
+                values: ['view', 'cart', 'purchase']
+
+      - name: user_id 
+        data_tests: 
+          - not_null
+      - name: is_zero_price
+        description: "Column to determine a DQ issue if a price is 0 for an item"
+      - name: is_late_arrival
+        description: "Column to determine if a record arrived later than its event"
+      
+

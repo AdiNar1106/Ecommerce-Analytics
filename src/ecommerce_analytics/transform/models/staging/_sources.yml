@@ -1,0 +1,31 @@
+version: 2
+
+sources:
+  - name: raw
+    schema: raw            # the schema dlt created (dataset_name="raw")
+    description: "Raw layer loaded by dlt from the simulated daily event exports. Everything is text; duplicates and late events are kept on purpose."
+
+    tables:
+      - name: events
+        description: "One row per event delivery. The same event can appear more than once (retries)."
+        config:
+          loaded_at_field: _extracted_at     # lineage column set by load_events.py
+          freshness:
+            warn_after: {count: 1, period: day}
+            error_after: {count: 3, period: day}
+
+        columns:
+          - name: event_id
+            description: "MD5 hash of the event's contents. Not unique in raw because of duplicate deliveries."
+            data_tests:
+              - not_null           # must hold even in raw
+              # no `unique` test: raw contains retries by design
+
+          - name: event_type
+            data_tests:
+              - not_null
+
+          - name: _source_file
+            description: "Export file this row came from."
+            data_tests:
+              - not_null
